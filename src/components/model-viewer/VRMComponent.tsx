@@ -30,7 +30,7 @@ export const VRMComponent: React.FC<VRMComponentProps> = ({
     }
   }, [vrm, scene]);
 
-  useFrame((state, delta) => {
+  useFrame((_, delta) => {
     if (vrm) {
       if (enableBoneAnimation) {
         const s = 0.25 * Math.PI * Math.sin(Math.PI * clock.elapsedTime);

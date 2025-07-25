@@ -1,4 +1,5 @@
 import React, { useCallback, useRef, useState } from "react";
+import { CloudUpload, Zap } from "lucide-react";
 
 interface VRMFileUploadProps {
   onFileSelect: (file: File) => void;
@@ -98,19 +99,7 @@ export const FileUpload: React.FC<VRMFileUploadProps> = ({
 
         <div className="space-y-4">
           <div className="flex justify-center">
-            <svg
-              className="h-12 w-12 text-gray-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-              />
-            </svg>
+            <CloudUpload className="h-12 w-12 text-gray-400" />
           </div>
 
           <div>
@@ -143,19 +132,7 @@ export const FileUpload: React.FC<VRMFileUploadProps> = ({
             } `}
           >
             <div className="flex items-center justify-center space-x-2">
-              <svg
-                className="h-5 w-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M13 10V3L4 14h7v7l9-11h-7z"
-                />
-              </svg>
+              <Zap className="h-5 w-5" />
               <span>Try with Sample Model</span>
             </div>
           </button>

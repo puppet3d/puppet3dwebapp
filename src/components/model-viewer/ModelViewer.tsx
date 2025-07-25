@@ -69,10 +69,7 @@ export const ModelViewer: React.FC = () => {
             </button>
           </div>
 
-          <div
-            className="overflow-hidden rounded-lg bg-white shadow"
-            style={{ height: "600px" }}
-          >
+          <div className="min-h-[600px] overflow-hidden rounded-lg bg-white shadow">
             <ModelRenderer
               vrmFile={userModelInput?.file}
               vrmUrl={userModelInput?.url}
