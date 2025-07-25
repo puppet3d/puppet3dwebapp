@@ -16,13 +16,39 @@ export const FileUpload: React.FC<VRMFileUploadProps> = ({
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [validationError, setValidationError] = useState<string | null>(null);
+
+  const validateVRMFile = (file: File): string | null => {
+    // Check file size (50MB limit)
+    const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+    if (file.size > MAX_FILE_SIZE) {
+      return "File too large (max 50MB)";
+    }
+
+    // Check file extension
+    if (!file.name.toLowerCase().endsWith(".vrm")) {
+      return "Please select a VRM file";
+    }
+
+    // Check MIME type (VRM files are typically application/octet-stream)
+    const validMimeTypes = ["application/octet-stream", "model/gltf-binary"];
+    if (file.type && !validMimeTypes.includes(file.type)) {
+      return "Invalid file type";
+    }
+
+    return null;
+  };
 
   const handleFileSelect = useCallback(
     (file: File) => {
-      if (file.name.toLowerCase().endsWith(".vrm")) {
-        onFileSelect(file);
+      const error = validateVRMFile(file);
+      if (error) {
+        setValidationError(error);
+        // Clear error after 5 seconds
+        setTimeout(() => setValidationError(null), 5000);
       } else {
-        alert("Please select a VRM file");
+        setValidationError(null);
+        onFileSelect(file);
       }
     },
     [onFileSelect],
@@ -139,9 +165,11 @@ export const FileUpload: React.FC<VRMFileUploadProps> = ({
         </div>
       )}
 
-      {error && (
+      {(error || validationError) && (
         <div className="mt-4 rounded-md border border-red-200 bg-red-50 p-3">
-          <p className="text-sm text-red-600">{error.message}</p>
+          <p className="text-sm text-red-600">
+            {validationError || error?.message}
+          </p>
         </div>
       )}
     </div>

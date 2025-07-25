@@ -29,6 +29,11 @@ npm run lint         # Run ESLint
 npm run format       # Format code with Prettier
 npm run typecheck    # TypeScript check
 
+# Testing
+npm run test         # Run tests in watch mode
+npm run test:ui      # Run tests with UI
+npm run test:coverage # Run tests with coverage report
+
 # Preview
 npm run preview      # Preview production build
 ```
