@@ -27,6 +27,7 @@ npm run build        # TypeScript check + production build
 # Code Quality
 npm run lint         # Run ESLint
 npm run format       # Format code with Prettier
+npm run typecheck    # TypeScript check
 
 # Preview
 npm run preview      # Preview production build
@@ -64,6 +65,7 @@ The project uses standard React conventions:
 - 3D-related utilities in `src/utils/` or `src/lib/`
 - WebSocket logic in `src/services/`
 - Type definitions in `src/types/`
+- Hooks in `src/hooks/`
 
 ### Code Style
 
