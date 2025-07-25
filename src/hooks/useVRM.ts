@@ -85,9 +85,9 @@ export const useVRM = () => {
       try {
         const vrm = await loadVRMFromUrl(url, file.name);
         return vrm;
-      } catch (error) {
+      } finally {
+        // Always revoke the blob URL to prevent memory leaks
         URL.revokeObjectURL(url);
-        throw error;
       }
     },
     [loadVRMFromUrl],
@@ -100,13 +100,23 @@ export const useVRM = () => {
       const expressionManager = vrmModel.vrm.expressionManager;
       if (!expressionManager) return;
 
-      // First reset all expressions to avoid overlapping
-      if (
-        expressionManager.expressions &&
-        typeof expressionManager.expressions.keys === "function"
-      ) {
-        for (const existingExpressionName of expressionManager.expressions.keys()) {
-          expressionManager.setValue(existingExpressionName.toString(), 0);
+      // Only reset conflicting expressions instead of all expressions
+      const conflictingExpressions = ["happy", "angry", "sad", "surprised"];
+      if (conflictingExpressions.includes(expressionName)) {
+        // Reset only other emotional expressions when setting an emotional expression
+        if (
+          expressionManager.expressions &&
+          typeof expressionManager.expressions.keys === "function"
+        ) {
+          for (const existingExpressionName of expressionManager.expressions.keys()) {
+            const nameStr = existingExpressionName.toString();
+            if (
+              conflictingExpressions.includes(nameStr) &&
+              nameStr !== expressionName
+            ) {
+              expressionManager.setValue(nameStr, 0);
+            }
+          }
         }
       }
 
