@@ -11,7 +11,7 @@
     "format": "npx prettier src --write",
     "preview": "vite preview",
     "prepare": "husky",
-    "test": "vitest",
+    "test": "vitest --run",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage"
   },
