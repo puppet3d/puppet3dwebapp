@@ -1,22 +1,19 @@
-import React, { useCallback, useRef, useState } from "react";
 import { CloudUpload, Zap } from "lucide-react";
+import React, { useCallback, useRef, useState } from "react";
 
 interface VRMFileUploadProps {
   onFileSelect: (file: File) => void;
-  onSampleModelSelect?: () => void;
-  isLoading?: boolean;
   error?: Error;
 }
 
 export const FileUpload: React.FC<VRMFileUploadProps> = ({
   onFileSelect,
-  onSampleModelSelect,
-  isLoading = false,
   error,
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const validateVRMFile = (file: File): string | null => {
     // Check file size (50MB limit)
@@ -92,13 +89,18 @@ export const FileUpload: React.FC<VRMFileUploadProps> = ({
   }, []);
 
   const handleSampleModelClick = useCallback(
-    (e: React.MouseEvent) => {
+    async (e: React.MouseEvent) => {
       e.stopPropagation();
-      if (onSampleModelSelect && !isLoading) {
-        onSampleModelSelect();
-      }
+      setIsLoading(true);
+      const response = await fetch("/VRM1_Constraint_Twist_Sample.vrm");
+      const blob = await response.blob();
+      const file = new File([blob], "VRM1_Constraint_Twist_Sample.vrm", {
+        type: "model/vrm",
+      });
+      handleFileSelect(file);
+      setIsLoading(false);
     },
-    [onSampleModelSelect, isLoading],
+    [handleFileSelect],
   );
 
   return (
@@ -112,14 +114,14 @@ export const FileUpload: React.FC<VRMFileUploadProps> = ({
           isDragging
             ? "border-blue-500 bg-blue-50"
             : "border-gray-300 hover:border-gray-400 hover:bg-gray-50"
-        } ${isLoading ? "cursor-not-allowed opacity-50" : ""} `}
+        }`}
       >
         <input
+          disabled={isLoading}
           ref={fileInputRef}
           type="file"
           accept=".vrm"
           onChange={handleFileInputChange}
-          disabled={isLoading}
           className="hidden"
         />
 
@@ -130,40 +132,34 @@ export const FileUpload: React.FC<VRMFileUploadProps> = ({
 
           <div>
             <p className="text-lg font-medium text-gray-700">
-              {isLoading ? "Loading..." : "Drop your VRM file here"}
+              Drop your VRM file here
             </p>
             <p className="mt-1 text-sm text-gray-500">or click to browse</p>
           </div>
         </div>
       </div>
 
-      {onSampleModelSelect && (
-        <div className="mt-4">
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-300" />
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="bg-gray-100 px-2 text-gray-500">or</span>
-            </div>
+      <div className="mt-4">
+        <div className="relative">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-gray-300" />
           </div>
-
-          <button
-            onClick={handleSampleModelClick}
-            disabled={isLoading}
-            className={`mt-4 w-full rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 font-medium text-blue-700 transition-all duration-200 ${
-              isLoading
-                ? "cursor-not-allowed opacity-50"
-                : "hover:border-blue-300 hover:bg-blue-100"
-            } `}
-          >
-            <div className="flex items-center justify-center space-x-2">
-              <Zap className="h-5 w-5" />
-              <span>Try with Sample Model</span>
-            </div>
-          </button>
+          <div className="relative flex justify-center text-sm">
+            <span className="bg-gray-100 px-2 text-gray-500">or</span>
+          </div>
         </div>
-      )}
+
+        <button
+          onClick={handleSampleModelClick}
+          disabled={isLoading}
+          className="mt-4 w-full rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 font-medium text-blue-700 transition-all duration-200 hover:border-blue-300 hover:bg-blue-100"
+        >
+          <div className="flex items-center justify-center space-x-2">
+            <Zap className="h-5 w-5" />
+            <span>Try with Sample Model</span>
+          </div>
+        </button>
+      </div>
 
       {(error || validationError) && (
         <div className="mt-4 rounded-md border border-red-200 bg-red-50 p-3">
