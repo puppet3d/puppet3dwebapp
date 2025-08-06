@@ -1,10 +1,13 @@
+import { AppCanvas } from "@/components/avatar/AppCanvas";
+import { VRMModelLoader } from "@/components/avatar/VRMModelLoader";
 import { Layout } from "@/components/layouts/Layout";
-import { ModelViewer } from "@/components/model-viewer/ModelViewer";
 
 function App() {
   return (
     <Layout>
-      <ModelViewer />
+      <AppCanvas>
+        <VRMModelLoader url="/VRM1_Constraint_Twist_Sample.vrm" />
+      </AppCanvas>
     </Layout>
   );
 }
