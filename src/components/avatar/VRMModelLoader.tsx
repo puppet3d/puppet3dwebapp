@@ -1,13 +1,7 @@
 import { VRMModelContext } from "@/hooks/useVRMModel";
 import { VRM, VRMLoaderPlugin } from "@pixiv/three-vrm";
 import { useFrame, useThree } from "@react-three/fiber";
-import {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  type ReactNode,
-} from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/Addons.js";
 
@@ -23,9 +17,8 @@ export const VRMModelLoader: React.FC<VRMModelLoaderProps> = ({
   onError,
 }) => {
   const { scene } = useThree();
-  const [vrmModel, setVRMModel] = useState<VRM | null>(null);
   const [error, setError] = useState<Error | null>(null);
-  const vrmRef = useRef<VRM | null>(null);
+  const [vrmModel, setVrmModel] = useState<VRM | null>(null);
 
   useFrame((_, delta) => {
     if (vrmModel) {
@@ -110,11 +103,9 @@ export const VRMModelLoader: React.FC<VRMModelLoaderProps> = ({
   const loadVRMFromUrl = useCallback(
     (modelUrl: string) => {
       // Clean up previous model
-      if (vrmRef.current) {
-        disposeVRM(vrmRef.current);
-        vrmRef.current = null;
+      if (vrmModel) {
+        disposeVRM(vrmModel);
       }
-      setVRMModel(null);
 
       const loader = new GLTFLoader();
       loader.register((parser) => {
@@ -125,12 +116,9 @@ export const VRMModelLoader: React.FC<VRMModelLoaderProps> = ({
         modelUrl,
         (gltf) => {
           const vrm: VRM = gltf.userData.vrm;
-
           // Normalize model size and position
           normalizeVRMModel(vrm);
-
-          vrmRef.current = vrm;
-          setVRMModel(vrm);
+          setVrmModel(vrm);
           console.debug("vrm object", vrm);
           console.debug("vrm metadata", vrm.meta);
           scene.add(vrm.scene);
@@ -146,34 +134,30 @@ export const VRMModelLoader: React.FC<VRMModelLoaderProps> = ({
         },
       );
     },
-    [scene, onError],
-  );
-
-  const loadVRMModel = useCallback(
-    async (url: string) => {
-      loadVRMFromUrl(url);
-    },
-    [loadVRMFromUrl],
+    [vrmModel, scene, onError],
   );
 
   useEffect(() => {
-    loadVRMFromUrl(url);
+    if (!vrmModel) {
+      loadVRMFromUrl(url);
+    }
 
     return () => {
       // Cleanup on unmount
-      if (vrmRef.current) {
-        disposeVRM(vrmRef.current);
-        vrmRef.current = null;
+      if (vrmModel) {
+        disposeVRM(vrmModel);
       }
     };
-  }, [url, loadVRMFromUrl]);
+  }, [url, loadVRMFromUrl, vrmModel]);
 
   if (error) {
     throw error;
   }
 
   return (
-    <VRMModelContext.Provider value={{ vrmModel, loadVRMModel }}>
+    <VRMModelContext.Provider
+      value={{ vrmModel, loadVRMModel: loadVRMFromUrl }}
+    >
       {children}
     </VRMModelContext.Provider>
   );
