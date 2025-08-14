@@ -1,6 +1,7 @@
 import { OrbitControls } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
 import { Suspense } from "react";
+import { CanvasFallback } from "../layouts/CanvasFallback";
 
 interface AppCanvasProps {
   children: React.ReactNode;
@@ -17,7 +18,7 @@ export const AppCanvas: React.FC<AppCanvasProps> = ({ children }) => {
       }}
       style={{ background: "#f0f0f0" }} // Neutral background
     >
-      <Suspense fallback={null}>
+      <Suspense fallback={<CanvasFallback type="loading" />}>
         <ambientLight intensity={0.6} />
         <directionalLight position={[0, 10, 5]} intensity={0.8} />
         <directionalLight position={[0, -5, -5]} intensity={0.3} />{" "}

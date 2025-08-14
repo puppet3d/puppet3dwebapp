@@ -1,27 +1,91 @@
+import { VRMModelContext } from "@/hooks/useVRMModel";
 import { VRM, VRMLoaderPlugin } from "@pixiv/three-vrm";
 import { useFrame, useThree } from "@react-three/fiber";
-import { useCallback, useEffect, useState, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/Addons.js";
-import { VRMModelContext } from "../../hooks/useVRMModel";
 
 interface VRMModelLoaderProps {
   url: string;
   children?: ReactNode;
+  onError?: (error: Error) => void;
 }
 
-/**
- * @todo url 파라미터 추가, 현재는 테스트용 모델 사용
- */
-export const VRMModelLoader: React.FC<VRMModelLoaderProps> = ({ children }) => {
+export const VRMModelLoader: React.FC<VRMModelLoaderProps> = ({
+  url,
+  children,
+  onError,
+}) => {
   const { scene } = useThree();
   const [vrmModel, setVRMModel] = useState<VRM | null>(null);
+  const [error, setError] = useState<Error | null>(null);
+  const vrmRef = useRef<VRM | null>(null);
 
   useFrame((_, delta) => {
     if (vrmModel) {
       vrmModel.update(delta);
     }
   });
+
+  const disposeVRM = (vrm: VRM) => {
+    // Remove from scene
+    if (vrm.scene.parent) {
+      vrm.scene.parent.remove(vrm.scene);
+    }
+
+    // Reset SpringBoneManager if exists
+    if (vrm.springBoneManager) {
+      vrm.springBoneManager.reset();
+    }
+
+    // Dispose all geometries, materials, and textures
+    vrm.scene.traverse((object) => {
+      if ((object as THREE.Mesh).isMesh) {
+        const mesh = object as THREE.Mesh;
+
+        // Dispose geometry
+        if (mesh.geometry) {
+          mesh.geometry.dispose();
+        }
+
+        // Dispose materials and their textures
+        if (mesh.material) {
+          const materials = Array.isArray(mesh.material)
+            ? mesh.material
+            : [mesh.material];
+
+          materials.forEach((material) => {
+            // Dispose all textures in the material
+            Object.keys(material).forEach((property) => {
+              const value = material[property as keyof typeof material];
+              if (value && typeof value === "object" && "isTexture" in value) {
+                (value as THREE.Texture).dispose();
+              }
+            });
+            material.dispose();
+          });
+        }
+      }
+    });
+
+    // Dispose VRM-specific textures from materials array
+    if (vrm.materials) {
+      vrm.materials.forEach((material) => {
+        Object.keys(material).forEach((property) => {
+          const value = material[property as keyof typeof material];
+          if (value && typeof value === "object" && "isTexture" in value) {
+            (value as THREE.Texture).dispose();
+          }
+        });
+      });
+    }
+  };
 
   const normalizeVRMModel = (vrm: VRM) => {
     // Calculate bounding box to get actual size
@@ -41,67 +105,72 @@ export const VRMModelLoader: React.FC<VRMModelLoaderProps> = ({ children }) => {
     // Center X and Z
     vrm.scene.position.x = -center.x * scale;
     vrm.scene.position.z = -center.z * scale;
-
-    console.debug("Model normalized:", {
-      originalHeight: size.y,
-      scale: scale,
-      newHeight: targetHeight,
-      minY: box.min.y,
-      maxY: box.max.y,
-      centerY: center.y,
-      finalPosition: vrm.scene.position,
-    });
   };
 
-  const loadVRMModel = useCallback(
-    async (url: string) => {
-      if (vrmModel) {
-        scene.remove(vrmModel.scene);
+  const loadVRMFromUrl = useCallback(
+    (modelUrl: string) => {
+      // Clean up previous model
+      if (vrmRef.current) {
+        disposeVRM(vrmRef.current);
+        vrmRef.current = null;
       }
-
       setVRMModel(null);
+
       const loader = new GLTFLoader();
       loader.register((parser) => {
         return new VRMLoaderPlugin(parser);
       });
-      loader.load(url, (gltf) => {
-        const vrm: VRM = gltf.userData.vrm;
 
-        // Normalize model size and position
-        normalizeVRMModel(vrm);
+      loader.load(
+        modelUrl,
+        (gltf) => {
+          const vrm: VRM = gltf.userData.vrm;
 
-        setVRMModel(vrm);
-        console.debug("vrm object", vrm);
-        console.debug("vrm metadata", vrm.meta);
-        scene.add(vrm.scene);
-      });
+          // Normalize model size and position
+          normalizeVRMModel(vrm);
+
+          vrmRef.current = vrm;
+          setVRMModel(vrm);
+          console.debug("vrm object", vrm);
+          console.debug("vrm metadata", vrm.meta);
+          scene.add(vrm.scene);
+        },
+        (error) => {
+          console.error(error);
+          if (error instanceof Error) {
+            setError(error);
+            onError?.(error);
+          } else {
+            return;
+          }
+        },
+      );
     },
-    [scene, vrmModel],
+    [scene, onError],
+  );
+
+  const loadVRMModel = useCallback(
+    async (url: string) => {
+      loadVRMFromUrl(url);
+    },
+    [loadVRMFromUrl],
   );
 
   useEffect(() => {
-    const loader = new GLTFLoader();
-    loader.register((parser) => {
-      return new VRMLoaderPlugin(parser);
-    });
-    loader.load("/VRM1_Constraint_Twist_Sample.vrm", (gltf) => {
-      const vrm: VRM = gltf.userData.vrm;
-
-      // Normalize model size and position
-      normalizeVRMModel(vrm);
-
-      setVRMModel(vrm);
-      console.debug("vrm object", vrm);
-      console.debug("vrm metadata", vrm.meta);
-      scene.add(vrm.scene);
-    });
+    loadVRMFromUrl(url);
 
     return () => {
-      if (vrmModel) {
-        scene.remove(vrmModel.scene);
+      // Cleanup on unmount
+      if (vrmRef.current) {
+        disposeVRM(vrmRef.current);
+        vrmRef.current = null;
       }
     };
-  }, []);
+  }, [url, loadVRMFromUrl]);
+
+  if (error) {
+    throw error;
+  }
 
   return (
     <VRMModelContext.Provider value={{ vrmModel, loadVRMModel }}>
