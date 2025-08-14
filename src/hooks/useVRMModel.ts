@@ -3,7 +3,7 @@ import { createContext, useContext } from "react";
 
 interface VRMModelContextType {
   vrmModel: VRM | null;
-  loadVRMModel: (url: string) => Promise<void>;
+  loadVRMModel: (url: string) => void;
 }
 
 export const VRMModelContext = createContext<VRMModelContextType | undefined>(
