@@ -7,21 +7,23 @@ VRM 모델의 다양한 기능(표정, 뼈대, 물리 효과 등)을 분리하�
 ### React 컴포넌트 계층 구조 추천
 
 1.  **`AppCanvas` (최상위 캔버스/씬 설정)**
-    - **역할**: R3F의 `<Canvas>` 컴포넌트를 사용하여 Three.js의 렌더링 환경을 설정하는 최상위 컴포넌트입니다. 전역적인 조명(lights), 환경(environment) 설정 및 **주요 카메라(camera)**를 정의합니다. [이전 응답]
+    - **역할**: R3F의 `<Canvas>` 컴포넌트를 사용하여 Three.js의 렌더링 환경을 설정하는 최상위 컴포넌트입니다. 전역적인 조명(lights), 환경(environment) 설정 및 **주요 카메라(camera)**를 정의합니다.
     - **유지보수 관점**: 렌더링 환경과 관련된 책임을 분리하여, 씬 내부의 VRM 모델 로직과 독립적으로 관리할 수 있습니다.
 
-2.  **`VRMModelLoader` (VRM 파일 로딩 및 업데이트 관리)**
-    - **역할**: **VRM 파일을 비동기적으로 불러오고 (`GLTFLoader` 및 `VRMLoaderPlugin` 사용)**, 로드된 `vrm` 객체를 관리합니다. **가장 중요하게는, VRM 모델의 동적인 부분(표정, 시선, 물리 효과 등)이 자연스럽게 움직이도록 `vrm.update()` 메서드를 매 프레임마다 호출하는 책임**을 가집니다. 로드된 `vrm` 객체는 하위 컴포넌트로 전달됩니다.
-    - **유지보수 관점**: 모델 로딩과 필수적인 매 프레임 업데이트 로직을 캡슐화하여, 실제 모델의 기능 구현과 분리합니다.
+2.  **`VRMModelLoader` (VRM 파일 로딩, Context 제공 및 업데이트 관리)**
+    - **역할**:
+      - **VRM 파일을 비동기적으로 불러오고 (`GLTFLoader` 및 `VRMLoaderPlugin` 사용)**, 로드된 `vrm` 객체를 관리합니다
+      - **React Context API (`VRMModelContext`)를 통해 `vrm` 객체를 하위 컴포넌트에 제공**합니다
+      - VRM 모델의 동적인 부분(표정, 시선, 물리 효과 등)이 자연스럽게 움직이도록 **`vrm.update()` 메서드를 매 프레임마다 호출**합니다
+      - 모델 정규화(크기, 위치 조정) 및 씬에 추가하는 역할을 담당합니다
+      - 메모리 관리를 위한 적절한 리소스 정리(dispose) 로직을 포함합니다
+    - **유지보수 관점**: 모델 로딩, Context 제공, 필수적인 매 프레임 업데이트 로직을 한 곳에 캡슐화하여 관리의 복잡성을 줄입니다.
 
-3.  **`VRMCharacter` (VRM 모델의 루트 컨테이너)**
-    - **역할**: `VRMModelLoader`로부터 전달받은 `vrm` 객체를 직접적으로 소비하며, 이 객체 내의 다양한 `VRMCore` 및 `VRM` 확장 구성 요소들을 각각의 기능별 하위 컴포넌트에 `prop`으로 전달하거나 React Context API를 통해 제공합니다. 실제 `vrm.scene`을 씬에 추가하는 역할도 담당합니다.
-    - **유지보수 관점**: 모델의 핵심 객체와 그 기능 관리자들을 한곳에 모아, 기능별 컴포넌트로의 연결 지점 역할을 합니다.
-
-4.  **VRM 기능별 하위 컴포넌트**
-    `VRMCharacter` 아래에 배치되며, 각각 특정 VRM 기능을 제어하는 독립적인 컴포넌트들입니다. 이들은 `VRMCharacter`로부터 필요한 `vrm` 객체 또는 특정 매니저(`expressionManager`, `humanoid` 등)를 전달받아 사용합니다.
+3.  **VRM 기능별 하위 컴포넌트**
+    `VRMModelLoader`의 자식으로 배치되며, 각각 특정 VRM 기능을 제어하는 독립적인 컴포넌트들입니다. 이들은 **`useVRMModel` 훅을 통해 Context에서 `vrm` 객체를 직접 가져와 사용**합니다. 이러한 구조는 불필요한 prop drilling을 방지하고 각 컴포넌트가 필요한 경우에만 vrm 객체에 접근할 수 있도록 합니다.
     - **`VRMHumanoidControl`**: 아바타의 뼈대(`humanoid`)를 제어하고 T-포즈를 기준으로 애니메이션 및 포즈를 적용합니다. `getRawBone`을 통해 특정 뼈를 가져오거나 포즈를 변경하는 기능을 제공할 수 있습니다.
-    - **`VRMExpressionControl`**: 아바타의 표정(`expressionManager`)을 관리합니다. `setValue` 메서드를 사용하여 다양한 프리셋 표정 또는 커스텀 표정의 강도를 조절하고, 여러 표정을 혼합하는 기능을 노출할 수 있습니다.
+    - **`VRMExpressionControl`**: 아바타의 감정 표정(`expressionManager`)을 관리합니다. `setValue` 메서드를 사용하여 감정 표현(happy, angry, sad, surprised, relaxed), 눈 깜빡임(blink, blinkLeft, blinkRight), 중립 상태(neutral) 등의 강도를 조절하고, 여러 표정을 혼합하는 기능을 제공합니다. 자동 눈 깜빡임 애니메이션도 포함합니다.
+    - **`VRMLipSyncControl`**: 아바타의 립싱크(`expressionManager`)를 담당합니다. TTS(Text-to-Speech) 및 음성 입력과 연동하여 음소별 입 모양(aa, ih, ou, ee, oh)을 실시간으로 동기화합니다. Web Audio API를 통한 오디오 분석, 음소 매핑, 부드러운 전환 애니메이션 등의 기능을 제공합니다.
     - **`VRMLookAtControl`**: 아바타의 시선(`lookAt`)을 특정 대상이나 위치로 유도합니다. 뼈대 방식과 표정 방식 두 가지 시선 추적 방식을 지원하며, 시선 범위를 조절하여 자연스러운 움직임을 만들 수 있습니다.
     - **`VRMSpringBonePhysics`**: 머리카락, 옷자락 등 아바타의 특정 부분에 자연스러운 물리 효과(`springBoneManager`)를 시뮬레이션하고, 강도, 중력, 저항력 등 물리 설정을 조정하는 기능을 제공합니다.
     - **`VRMAnimationPlayer`**: `gltf.animations`에서 애니메이션 클립을 가져와 `AnimationMixer`를 통해 재생하고 제어합니다. 재생 속도, 반복 설정, 애니메이션 전환(블렌딩) 등의 기능을 포함할 수 있습니다.
@@ -38,4 +40,19 @@ VRM 모델의 다양한 기능(표정, 뼈대, 물리 효과 등)을 분리하�
 - **디버깅 용이성**: 문제가 발생했을 때, 특정 기능에 문제가 있다면 해당 기능을 담당하는 컴포넌트만 집중적으로 살펴볼 수 있어 디버깅 시간을 단축시킵니다.
 - **Three.js와의 분리**: Three.js의 Low-level API 직접 호출은 `VRMModelLoader` 내부나 각 기능별 컴포넌트 내부로 캡슐화되어, 최상위 컴포넌트는 React 및 VRM 로직에 더 집중할 수 있습니다.
 
-이러한 컴포넌트 구성은 VRM 모델의 복잡한 기능을 체계적으로 관리하고, AI 연애 시뮬레이터와 같이 아바타의 다양한 상호작용이 필요한 애플리케이션에서 유연하게 대응할 수 있도록 합니다. 예를 들어, MCP 서버에서 LLM이 "웃는 표정을 지어라"는 도구 호출 지시(tool_use)를 내리면, 프론트엔드의 `VRMExpressionControl` 컴포넌트가 해당 명령을 받아 표정을 변경하게 됩니다.
+### 컴포넌트 구조 예시
+
+```
+AppCanvas
+└── VRMModelLoader (Context Provider)
+    ├── VRMExpressionControl (useVRMModel 훅 사용)
+    ├── VRMLipSyncControl (useVRMModel 훅 사용)
+    ├── VRMHumanoidControl (useVRMModel 훅 사용)
+    ├── VRMLookAtControl (useVRMModel 훅 사용)
+    ├── VRMSpringBonePhysics (useVRMModel 훅 사용)
+    ├── VRMAnimationPlayer (useVRMModel 훅 사용)
+    ├── VRMNodeConstraintManager (useVRMModel 훅 사용)
+    └── VRMToonMaterialSettings (useVRMModel 훅 사용)
+```
+
+이러한 컴포넌트 구성은 VRM 모델의 복잡한 기능을 체계적으로 관리하고, AI 연애 시뮬레이터와 같이 아바타의 다양한 상호작용이 필요한 애플리케이션에서 유연하게 대응할 수 있도록 합니다. 예를 들어, MCP 서버에서 LLM이 "웃는 표정을 지어라"는 도구 호출 지시(tool_use)를 내리면, 프론트엔드의 `VRMExpressionControl` 컴포넌트가 `useVRMModel` 훅을 통해 vrm 객체에 접근하여 표정을 변경하게 됩니다.
