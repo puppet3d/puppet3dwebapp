@@ -22,7 +22,6 @@ export const AppCanvas: React.FC<AppCanvasProps> = ({ children }) => {
         <ambientLight intensity={0.6} />
         <directionalLight position={[0, 10, 5]} intensity={0.8} />
         <directionalLight position={[0, -5, -5]} intensity={0.3} />
-        {/* Fill light from below */}
         {children}
         <OrbitControls
           target={[0, 1.2, 0]} // Look at chest/neck area (75% of normalized 1.6m height)

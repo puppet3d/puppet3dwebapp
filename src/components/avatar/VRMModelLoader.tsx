@@ -1,5 +1,10 @@
 import { VRMModelContext } from "@/hooks/useVRMModel";
-import { VRM, VRMLoaderPlugin } from "@pixiv/three-vrm";
+import {
+  VRM,
+  VRMLoaderPlugin,
+  VRMSpringBoneColliderShapeCapsule,
+  VRMSpringBoneColliderShapeSphere,
+} from "@pixiv/three-vrm";
 import { useFrame, useThree } from "@react-three/fiber";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import * as THREE from "three";
@@ -90,8 +95,30 @@ export const VRMModelLoader: React.FC<VRMModelLoaderProps> = ({
     const targetHeight = 1.6;
     const scale = targetHeight / size.y;
 
-    // Apply scale
+    // Apply scale to the scene first
     vrm.scene.scale.multiplyScalar(scale);
+
+    // Scale spring bone parameters proportionally
+    if (vrm.springBoneManager) {
+      // Scale spring bone joints
+      const joints = vrm.springBoneManager.joints;
+      for (const joint of joints) {
+        joint.settings.stiffness *= scale;
+        joint.settings.hitRadius *= scale;
+      }
+
+      // Scale colliders
+      const colliders = vrm.springBoneManager.colliders;
+      for (const collider of colliders) {
+        const shape = collider.shape;
+        if (shape instanceof VRMSpringBoneColliderShapeCapsule) {
+          shape.radius *= scale;
+          shape.tail.multiplyScalar(scale);
+        } else if (shape instanceof VRMSpringBoneColliderShapeSphere) {
+          shape.radius *= scale;
+        }
+      }
+    }
 
     // Position model so feet (bottom of bounding box) are at Y=0
     vrm.scene.position.y = -box.min.y * scale;
