@@ -2,6 +2,11 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+# DO NOT USE TYPE ASSERTION
+
+DO NOT USE TYPE ASSERTION
+DO NOT USE ANY TYPE
+
 ## Project Overview
 
 This is a Puppet3D WebApp - a React-based web application that serves as both an MCP Host and MCP Client in the Model Context Protocol ecosystem. The app allows LLMs to control 3D VRM avatars through MCP tools, enabling users to upload custom VRM models, render them in the browser with WebXR support (VR/AR), and interact with avatars through natural language.
@@ -73,6 +78,11 @@ The project uses standard React conventions:
 - Components should go in `src/components/`
 - Hooks should go in `src/hooks/`
 - Documents related to the project should go in `docs/`
+- **Test files should go in `test/` directory (NOT in src/)**
+  - Component tests: `test/components/`
+  - Store tests: `test/store/`
+  - Test configuration: `test/setup.ts`
+  - TypeScript test config: `tsconfig.test.json`
 
 ### Code Style
 
