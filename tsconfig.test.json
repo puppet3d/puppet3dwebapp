@@ -1,0 +1,18 @@
+{
+  "extends": "./tsconfig.app.json",
+  "compilerOptions": {
+    "types": ["vitest/globals", "@testing-library/jest-dom", "node"],
+    "skipLibCheck": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "composite": false,
+    "noEmit": true,
+    "strict": true,
+    "noImplicitAny": true,
+    "jsx": "react-jsx",
+    "moduleResolution": "bundler",
+    "target": "ES2020"
+  },
+  "include": ["test/**/*.ts", "test/**/*.tsx", "src/**/*.ts", "src/**/*.tsx"],
+  "exclude": ["node_modules", "dist", "build"]
+}
