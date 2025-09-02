@@ -9,7 +9,7 @@ import tseslint from "typescript-eslint";
 export default tseslint.config([
   globalIgnores(["dist", "coverage"]),
   {
-    files: ["**/*.{ts,tsx}"],
+    files: ["src/**/*.{ts,tsx}"],
     extends: [
       js.configs.recommended,
       tseslint.configs.recommended,
