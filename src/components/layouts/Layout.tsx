@@ -1,3 +1,6 @@
+import { GlobalErrorFallback } from "@/components/layouts/GlobalErrorFallback";
+import { ErrorBoundary } from "react-error-boundary";
+
 interface LayoutProps {
   children: React.ReactNode;
 }
@@ -8,8 +11,18 @@ interface LayoutProps {
  */
 export const Layout: React.FC<LayoutProps> = ({ children }) => {
   return (
-    <div className="relative flex h-screen w-screen flex-col items-center justify-center">
-      {children}
-    </div>
+    <ErrorBoundary
+      FallbackComponent={GlobalErrorFallback}
+      onError={(error, errorInfo) => {
+        console.error("ErrorBoundary caught an error:", error, errorInfo);
+      }}
+      onReset={() => {
+        window.location.reload();
+      }}
+    >
+      <main className="relative flex h-screen w-screen flex-col items-center justify-center">
+        {children}
+      </main>
+    </ErrorBoundary>
   );
 };
