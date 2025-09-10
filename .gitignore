@@ -13,6 +13,7 @@ dist
 .vite
 dist-ssr
 *.local
+*.local.*
 
 # Test coverage
 coverage
